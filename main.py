@@ -4,8 +4,11 @@ import fire
 import pexpect
 import subprocess
 import json
+from rich.console import Console
 from bullet import Bullet, Password, Input, VerticalPrompt, ScrollBar, SlidePrompt
 
+
+console = Console()
 
 class OmsCli(object):
 
@@ -20,13 +23,16 @@ class OmsCli(object):
         result = cli.launch()
         ret = subprocess.run(["vault", "kv", "patch", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True)
         if not ret.stdout.decode('utf-8'):
-            # 数据库为空时需要先put一次
+            # 数据库为空，需要先put一次
             ret = subprocess.run(["vault", "kv", "put", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True) 
-        print(
-            f"Finsh upsert server: {result[0][1]}")
+        console.print("[green]Finish upsert server: [/green][sky_blue3]{}[/sky_blue3]".format(result[0][1]))
 
     def list(self):
-        pass
+        ret = subprocess.run(["vault", "kv", "get", "-format=json", "-mount=secret", "test"], capture_output=True)
+        data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
+        console.print("[bold medium_purple]All servers are listed:[/bold medium_purple]")
+        for k in data.keys():
+            console.print("[sky_blue3]{}[/sky_blue3]".format(k))
 
     def ssh(self):
         ret = subprocess.run(["vault", "kv", "get", "-format=json", "-mount=secret", "test"], capture_output=True)

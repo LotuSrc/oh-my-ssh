@@ -20,7 +20,8 @@ setup(name='oms',
       install_requires=[
           'bullet==2.2.0',
           'pexpect',
-          'fire'
+          'fire',
+          'rich'
       ],
       entry_points={
           'console_scripts': [
