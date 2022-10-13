@@ -1,17 +1,15 @@
 import base64
 import os
-import configparser
 import fire
 import pexpect
-from config import *
+import subprocess
+import json
 from bullet import Bullet, Password, Input, VerticalPrompt, ScrollBar, SlidePrompt
 
 
 class OmsCli(object):
 
     def upsert(self):
-        config = configparser.ConfigParser()
-        config.read(OH_MY_SSH_PATH)
         cli = VerticalPrompt(
             [
                 Input("Enter the server name or ip:",),
@@ -20,9 +18,10 @@ class OmsCli(object):
             spacing=0
         )
         result = cli.launch()
+        ret = subprocess.run(["vault", "kv", "patch", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True)
         config[result[0][1]] = {"psw": result[1][1]}
-        with open(OH_MY_SSH_PATH, 'w') as f:
-            config.write(f)
+        # with open(OH_MY_SSH_PATH, 'w') as f:
+        #     config.write(f)
         print(
             f"Finsh upsert server: {result[0][1]}")
 
@@ -30,23 +29,23 @@ class OmsCli(object):
         pass
 
     def ssh(self):
-        config = configparser.ConfigParser()
-        config.read(OH_MY_SSH_PATH)
-        print(OH_MY_SSH_PATH)
+        ret = subprocess.run(["vault", "kv", "get", "-format=json", "-mount=secret", "test"], capture_output=True)
+        data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
         cli = Bullet(
             prompt="Choose from the servers below:",
-            choices=config.sections()
+            # choices=config.sections()
+            choices=list(data.keys())
         )
         result = cli.launch()
         child = pexpect.spawn(f"ssh {result}")
         i = child.expect([".*password.*", ".*continue.*?",
                           pexpect.EOF, pexpect.TIMEOUT])
         if i == 0:
-            child.sendline(f"{config.get(result, 'psw')}\n")
+            child.sendline("{}\n".format(data[result]))
             child.interact()
         elif i == 1:
             child.sendline("yes\n")
-            child.sendline(f"{config.get(result, 'psw')}\n")
+            child.sendline("{}\n".format(data[result]))
             child.interact()
 
     def scp(self):
