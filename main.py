@@ -19,9 +19,6 @@ class OmsCli(object):
         )
         result = cli.launch()
         ret = subprocess.run(["vault", "kv", "patch", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True)
-        config[result[0][1]] = {"psw": result[1][1]}
-        # with open(OH_MY_SSH_PATH, 'w') as f:
-        #     config.write(f)
         print(
             f"Finsh upsert server: {result[0][1]}")
 
@@ -33,7 +30,6 @@ class OmsCli(object):
         data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
         cli = Bullet(
             prompt="Choose from the servers below:",
-            # choices=config.sections()
             choices=list(data.keys())
         )
         result = cli.launch()
