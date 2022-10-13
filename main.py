@@ -19,6 +19,9 @@ class OmsCli(object):
         )
         result = cli.launch()
         ret = subprocess.run(["vault", "kv", "patch", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True)
+        if not ret.stdout.decode('utf-8'):
+            # 数据库为空时需要先put一次
+            ret = subprocess.run(["vault", "kv", "put", "-format=json", "-mount=secret", "test", "{}={}".format(result[0][1], result[1][1])], capture_output=True) 
         print(
             f"Finsh upsert server: {result[0][1]}")
 
