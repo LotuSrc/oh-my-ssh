@@ -30,22 +30,18 @@ class OmsCli(object):
 
     def list(self):
         ret = subprocess.run(["vault", "kv", "list", "-format=json", "secret/oms"], capture_output=True)
-        # data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
         data = json.loads(ret.stdout.decode('utf-8'))
 
         console.print("[bold medium_purple]All servers are listed:[/bold medium_purple]")
-        # for k in data.keys():
         for k in data:
             ret = subprocess.run(["vault", "kv", "get", "-format=json", "-field=description", "-mount=secret", "oms/{}".format(k)], capture_output=True)
             console.print("[sky_blue3]{}[/sky_blue3]\t{}".format(k, json.loads(ret.stdout.decode('utf-8'))))
 
     def ssh(self):
         ret = subprocess.run(["vault", "kv", "list", "-format=json", "secret/oms"], capture_output=True)
-        # data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
         data = json.loads(ret.stdout.decode('utf-8'))
         cli = Bullet(
             prompt="Choose from the servers below:",
-            # choices=list(data.keys())
             choices=data
         )
         result = cli.launch()
