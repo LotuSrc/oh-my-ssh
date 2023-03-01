@@ -45,18 +45,22 @@ class OmsCli(object):
             choices=data
         )
         result = cli.launch()
-        child = pexpect.spawn("ssh {}".format(result))
-        i = child.expect([".*password.*", ".*continue.*?",
+        child = pexpect.spawn("ssh", [result], timeout=10, maxread=1)
+        i = child.expect(["(?i)(?:password:)|(?:passphrase for key)", "(?i)are you sure you want to continue connecting", "Welcome",
                           pexpect.EOF, pexpect.TIMEOUT])
-
-        ret = subprocess.run(["vault", "kv", "get", "-format=json", "-mount=secret", "oms/{}".format(result)], capture_output=True)
-        data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
-        if i == 0:
-            child.sendline("{}\n".format(data['password']))
-            child.interact()
-        elif i == 1:
-            child.sendline("yes\n")
-            child.sendline("{}\n".format(data['password']))
+        if i == 0 or i == 1:
+            ret = subprocess.run(["vault", "kv", "get", "-format=json", "-mount=secret", "oms/{}".format(result)], capture_output=True)
+            data = json.loads(ret.stdout.decode('utf-8'))['data']['data']
+            if i == 0:
+                child.sendline("{}\n".format(data['password']))
+                child.interact()
+            else:
+                child.sendline("yes\n")
+                child.sendline("{}\n".format(data['password']))
+                child.interact()
+        elif i == 2:
+            # 处理秘钥登录的情况
+            print(child.after.decode(), end="")
             child.interact()
 
     def scp(self):
